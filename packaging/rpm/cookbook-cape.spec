@@ -8,6 +8,20 @@ License: AGPL 3.0
 URL: https://github.com/redBorder/cookbook-cape
 Source0: %{name}-%{version}.tar.gz
 
+Requires: libvirt = 10.10.0
+Requires: qemu-kvm = 17:9.1.0
+Requires: virt-top = 1.1.1
+Requires: virt-viewer = 11.0
+Requires: bridge-utils = 1.7.1
+# Requires: libvirt-devel = 10.10.0
+
+    # dependecies = %w(qemu-kvm-17:9.1.0-15.el9_6.7
+    #   libvirt-10.10.0-7.6.el9_6
+    #   virt-top-1.1.1-9.el9
+    #   virt-viewer-11.0-1.el9
+    #   bridge-utils-1.7.1-3.el9
+    #   libvirt-devel-10.10.0-7.6.el9_6.x86_64)
+
 %description
 %{summary}
 
@@ -39,6 +53,8 @@ case "$1" in
   ;;
 esac
 
+systemctl start libvirtd
+systemctl enable libvirtd
 %postun
 # Deletes directory when uninstalling the package
 if [ "$1" = 0 ] && [ -d /var/chef/cookbooks/cape ]; then
