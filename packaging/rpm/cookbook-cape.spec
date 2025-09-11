@@ -13,6 +13,10 @@ Requires: qemu-kvm = 17:9.1.0
 Requires: virt-top = 1.1.1
 Requires: virt-viewer = 11.0
 Requires: bridge-utils = 1.7.1
+Requires: gcc-c++
+Requires: make
+Requires: python3-devel
+
 # Requires: libvirt-devel = 10.10.0
 
     # dependecies = %w(qemu-kvm-17:9.1.0-15.el9_6.7
@@ -61,6 +65,7 @@ if [ "$1" = 0 ] && [ -d /var/chef/cookbooks/cape ]; then
   rm -rf /var/chef/cookbooks/cape
 fi
 
+systemctl daemon-reload
 %files
 %defattr(0644,root,root)
 %attr(0755,root,root)
