@@ -6,28 +6,69 @@ include Cape::Helper
 action :add do
   begin
 
-    s3_sevice = new_resource.s3_service
-    s3_secrets = {}
+    user = new_resource.user
+    group = new_resource.group
+    cape_interface_ip = new_resource.cape_interface_ip
+    cape_interface = new_resource.cape_interface
+    cape_web_ip = new_resource.cape_web_ip
+    cape_web_port = new_resource.cape_web_port
+    ipaddress_sync = new_resource.ipaddress_sync
+    cape_result_server_ip = new_resource.cape_result_server_ip
+    cape_result_server_port = new_resource.cape_result_server_port
+    cape_min_freespace = new_resource.cape_min_freespace
 
-    begin
-      s3_secrets = data_bag_item('passwords', 's3').to_hash
-    rescue
-      s3_secrets = {}
+    dnf_package 'cape' do
+      action :upgrade
     end
-
-     bucket_created_dg = Chef::DataBagItem.load("rBglobal", "malware-bucket") rescue bucket_created_dg =  {}
-    if !bucket_created_dg["user"].nil? and !bucket_created_dg["user"]["key_id"].nil? and !bucket_created_dg["user"]["key_secret"].nil?
-      s3_secrets["key_id_malware"]     = bucket_created_dg["user"]["key_id"]
-      s3_secrets["key_secret_malware"] = bucket_created_dg["user"]["key_secret"]
-    else
-      s3_secrets["key_id_malware"]     = s3_secrets["key_id"]
-      s3_secrets["key_secret_malware"] = s3_secrets["key_secret"]
-    end
-
-    user "cape"
 
     group "libvirtd" do
-      members "cape"
+      members user
+    end
+
+    %w(
+    cape-rooter.service
+    cape-processor.service
+    cape.service
+    ).each do |unit|
+      cookbook_file "/etc/systemd/system/#{unit}" do
+        cookbook 'cape'
+        source unit
+        owner 'root'
+        group 'root'
+        mode '0644'
+        # notifies :restart, "service[#{unit}]", :delayed
+      end
+    end
+
+    template "/etc/systemd/system/cape-web.service" do
+      cookbook 'cape'
+      source "cape-web.service.erb"
+      mode '0644'
+      owner 'root'
+      group 'root'
+      variables ({
+        cape_web_ip: cape_web_ip, 
+        cape_web_port: cape_web_port
+      })
+      notifies :run, 'execute[daemon-reload]', :delayed
+    end
+
+    execute 'daemon-reload' do
+      command 'systemctl daemon-reload'
+      action :nothing
+    end
+
+    %w(
+    cape
+    cape-rooter
+    cape-processor
+    cape-web
+    ).each do |svc|
+      service svc do
+        service_name svc
+        supports status: true, restart: true, enable: true
+        action [:enable, :start]
+      end
     end
 
     # Configure tcpdump
@@ -35,31 +76,31 @@ action :add do
       command 'setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump'
     end
 
-    execute 'enable_crb_repo' do
-      command 'dnf config-manager --set-enabled crb'
-      not_if 'dnf repolist enabled | grep -q crb'
+
+    utilities = %w(libvirt-devel virtio-win)
+    utilities.each do |utility|
+      dnf_package utility do
+        action :upgrade
+      end
     end
 
-    dnf_package 'cape' do
-      action :upgrade
+    cape_dirs = %w(logs tmp static)
+
+    cape_dirs.each do |dirs|
+      directory "/opt/CAPEv2/#{dirs}" do
+        owner user
+        group group
+        mode '0755'
+      end
     end
 
-    dnf_package 'libvirt-devel' do
-      action :install
+    directory '/usr/lib/cape' do
+      owner user
+      group group
+      mode '0755'
     end
 
-    
-    # cape_config 'config' do
-    #   action :add
-    # end
-
-   
-
-    # link "/opt/rb/var/cape/log" do
-    #   to "/var/log/cape"
-    # end
-
-    config_files = %w(api cuckoomx integrations mitmdump proxmox virtualbox vsphere
+    config_files = %w(api cuckoo cuckoomx integrations mitmdump proxmox virtualbox vsphere
     auxiliary distributed multi qemu vmware web
     aws esx logging physical reporting vmwarerest xenserver
     az externalservices malheur polarproxy routing vmwareserver
@@ -72,18 +113,21 @@ action :add do
         mode '0644'
         owner 'root'
         group 'root'
+        variables ({
+          :interface_ip => cape_interface_ip,
+          :interface => cape_interface,
+          :cape_web_ip => cape_web_ip,
+          :cape_web_port => cape_web_port,
+          :cape_result_server_ip => cape_result_server_ip,
+          :cape_result_server_port => cape_result_server_port,
+          :cape_min_freespace => cape_min_freespace,
+          :ipaddress_sync => ipaddress_sync
+        })
+        notifies :restart, 'service[cape]', :delayed
+        notifies :restart, 'service[cape-processor]', :delayed
+        notifies :restart, 'service[cape-rooter]', :delayed
+        notifies :restart, 'service[cape-web]', :delayed
       end
-    end
-
-    template '/opt/CAPEv2/conf/cuckoo.conf' do
-      cookbook 'cape'
-      source 'cuckoo.conf.erb'
-      mode '0644'
-      owner 'root'
-      group 'root'
-      variables ({
-        :interface_ip => node[:redborder][:cape][:interface_ip]
-      })
     end
 
     template 'opt/CAPEv2/conf/kvm.conf' do
@@ -93,49 +137,11 @@ action :add do
       owner 'root'
       group 'root'
       action :create_if_missing
+      notifies :restart, 'service[cape]', :delayed
+      notifies :restart, 'service[cape-processor]', :delayed
+      notifies :restart, 'service[cape-rooter]', :delayed
+      notifies :restart, 'service[cape-web]', :delayed
     end
-
-    if node[:redborder][:cape_api][:service] == true
-      delMachines
-      addMachine
-    end
-
-    # template node[:redborder][:cape][:uploads3] do
-    #   cookbook 'cape'
-    #   source 'uploads3.conf.erb'
-    #   mode '0644'
-    #   owner 'root'
-    #   group 'root'
-    #   variables(:key_id => s3_secrets["key_id_malware"],
-    #             :key_secret => s3_secrets["key_secret_malware"],
-    #             :key_hostname => s3_secrets["hostname"])
-    # end
-
-    # template node[:redborder][:cape][:uploadscoreaerospike] do
-    #   cookbook 'cape'
-    #   source 'uploadscoreaerospike.conf.erb'
-    #   mode '0644'
-    #   owner 'root'
-    #   group 'root'
-    #   variables ({
-    #     :cape_weight_file => node[:redborder][:cape][:cape_weight_file],
-    #     :aerospike_config_file => node[:redborder][:cape][:aerospike_config_file],
-    #     :malware_weights_file => node[:redborder][:cape][:malware_weights_file]
-    #   })
-    # end
-
-    # template node[:redborder][:cape][:hdfs_conf] do
-    #   cookbook 'cape'
-    #   source 'uploadhdfs.conf.erb'
-    #   mode '0644'
-    #   owner 'root'
-    #   group 'root'
-    #   variables ({
-    #     :hadoop_server => node[:redborder][:cape][:hadoop_server],
-    #     :hadoop_port => node[:redborder][:cape][:hadoop_port],
-    #     :hadoop_path => node[:redborder][:cape][:hadoop_path]
-    #   })
-    # end
 
     template "/etc/libvirt/libvirtd.conf" do
       cookbook 'cape'
@@ -143,7 +149,12 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
-      variables ({ :libvirtd_max_clients => node[:redborder][:cape][:libvirtd_max_clients], :libvirtd_max_workers => node[:redborder][:cape][:libvirtd_max_workers], :libvirtd_min_workers => node[:redborder][:cape][:libvirtd_min_workers], :libvirtd_max_requests => node[:redborder][:cape][:libvirtd_max_requests], :libvirtd_max_client_requests => node[:redborder][:cape][:libvirtd_max_client_requests]
+      variables ({ 
+        :libvirtd_max_clients => node[:redborder][:cape][:libvirtd_max_clients], 
+        :libvirtd_max_workers => node[:redborder][:cape][:libvirtd_max_workers], 
+        :libvirtd_min_workers => node[:redborder][:cape][:libvirtd_min_workers], 
+        :libvirtd_max_requests => node[:redborder][:cape][:libvirtd_max_requests], 
+        :libvirtd_max_client_requests => node[:redborder][:cape][:libvirtd_max_client_requests]
       })
     end
 
@@ -155,37 +166,6 @@ action :add do
       group 'root'
     end
 
-    # suricata-update.service
-    # suricata-update.timer
-    %w(
-    cape-rooter.service
-    cape-processor.service
-    cape.service
-    cape-web.service
-    ).each do |unit|
-      cookbook_file "/etc/systemd/system/#{unit}" do
-        cookbook 'cape'
-        source unit
-        owner 'root'
-        group 'root'
-        mode '0644'
-        # notifies :run, 'execute[systemd-daemon-reload]', :immediately
-      end
-    end
-
-    execute 'copy suricata systemd service files' do
-      command 'cp /opt/CAPEv2/systemd/suricata*.service /etc/systemd/system && cp /opt/CAPEv2/systemd/suricate-update.timer /etc/systemd/system'
-    end
-
-    # template node[:redborder][:cape][:zookeeper_conf] do
-    #   cookbook 'cape'
-    #   source 'uploadzookeeper.conf.erb'
-    #   mode '0644'
-    #   owner 'root'
-    #   group 'root'
-    # end
-
-
     Chef::Log.info('Cape cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
@@ -194,12 +174,6 @@ end
 
 action :remove do
   begin
-    # service 'aerospike' do
-    #   service_name 'aerospike'
-    #   ignore_failure true
-    #   supports status: true, enable: true
-    #   action [:stop, :disable]
-    # end
 
     dnf_package 'cape' do
       action :remove
@@ -209,5 +183,59 @@ action :remove do
     Chef::Log.info('Cape cookbook has been processed')
   rescue => e
     Chef::Log.error(e.message)
+  end
+end
+
+action :register do
+  begin
+    service_names = %w(cape-rooter cape-processor cape cape-web)
+    # Define services to add
+    services = service_names.map do |name|
+      {
+        'ID' => "#{name}-#{node['hostname']}",
+        'Name' => name,
+        'Address' => node['ipaddress_sync']
+      }
+    end
+
+    services.each do |service|
+      service_key = service['Name']
+      
+      unless node['cape'][service_key]['registered']
+        json_query = Chef::JSONCompat.to_json(service)
+
+        execute "Register #{service['Name']} service in consul" do
+          command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+          action :nothing
+        end.run_action(:run)
+
+        node.override['cape'][service_key]['registered'] = true
+        Chef::Log.info("#{service['Name']} service has been registered in consul")
+      end
+    end
+  rescue => e
+    Chef::Log.error("Error registering services: #{e.message}")
+  end
+end
+
+action :deregister do
+  begin
+    service_names = %w(cape-rooter cape-processor cape cape-web)
+    
+    service_names.each do |service_name|
+      service_key = service_name
+      
+      if node['cape'][service_key]['registered']
+        execute "Deregister #{service_name} service from consul" do
+          command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
+          action :nothing
+        end.run_action(:run)
+
+        node.override['cape'][service_key]['registered'] = false
+        Chef::Log.info("#{service_name} service has been deregistered from consul")
+      end
+    end
+  rescue => e
+    Chef::Log.error("Error deregistering services: #{e.message}")
   end
 end

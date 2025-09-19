@@ -20,7 +20,7 @@ route = internet
 # "dirty line" so to say. Note that, just like with the VPNs, this will allow
 # malicious traffic through your network. So think twice before enabling it.
 # (For example, to route all VMs through eth0 by default: "internet = eth0").
-internet = virbr0
+internet = <%= @interface %>
 
 # When set to no masquerade rule has been not generated.
 nat = yes

@@ -3,9 +3,9 @@
 bin = /opt/mitmproxy/mitmdump
 
 # Host ip where mitmdump is listening
-host = 127.0.0.1
+host = <%= @ipaddress_sync %>
 
 # Interface where mitmdump is listening
-interface = virbr0
+interface = <%= @interface %>
 
 # Future options like custom ports, cert paths, etc

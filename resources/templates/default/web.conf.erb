@@ -49,7 +49,7 @@ top_asn = yes
 # Enable checking for samples in MongoDB before fetching from external sources. Disable to reduce MongoDB load when the database is large.
 check_sample_in_mongodb = no
 # hostname of the cape instance
-hostname = 127.0.0.1
+hostname = <%= @ipaddress_sync %>
 ;hostname = www.capesandbox.com
 # Check if config exists or try to extract before accept task as static
 check_config_exists = no

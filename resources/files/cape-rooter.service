@@ -12,8 +12,6 @@ ExecStartPre=/opt/redborder-cape/venv/bin/poetry config cache-dir /opt/CAPEv2/.c
 ExecStart=/opt/redborder-cape/venv/bin/poetry run python rooter.py -g cape
 User=root
 Group=root
-Restart=always
-RestartSec=5m
 
 [Install]
 WantedBy=multi-user.target

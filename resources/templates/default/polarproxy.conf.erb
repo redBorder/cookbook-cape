@@ -3,10 +3,10 @@
 bin = /opt/PolarProxy/PolarProxy
 
 # Host ip where PolarProxy is listening
-host = 192.168.122.1
+host = <%= @interface_ip %>
 
 # Interface where PolarProxy is listening
-interface = virbr0
+interface = <%= @interface %>
 
 # PKCS#12 certificate/private key file
 cert = /opt/PolarProxy/PolarProxy-key-crt.p12

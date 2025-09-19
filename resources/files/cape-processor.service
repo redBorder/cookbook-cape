@@ -11,8 +11,6 @@ WorkingDirectory=/opt/CAPEv2/utils/
 ExecStart=/opt/redborder-cape/venv/bin/poetry run python process.py -p7 auto -pt 900
 User=cape
 Group=cape
-Restart=always
-RestartSec=5m
 LimitNOFILE=100000
 
 [Install]

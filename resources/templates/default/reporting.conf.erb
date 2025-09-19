@@ -113,7 +113,7 @@ fix_large_docs = yes
 [elasticsearchdb]
 enabled = no
 searchonly = no
-host = 127.0.0.1
+host = <%= @ipaddress_sync %>
 port = 9200
 # The report data is indexed in the form of {{index-yyyy.mm.dd}}
 # so the below index configuration option is actually an index 'prefix'.

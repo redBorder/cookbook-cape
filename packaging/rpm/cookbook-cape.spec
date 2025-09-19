@@ -17,15 +17,6 @@ Requires: gcc-c++
 Requires: make
 Requires: python3-devel
 
-# Requires: libvirt-devel = 10.10.0
-
-    # dependecies = %w(qemu-kvm-17:9.1.0-15.el9_6.7
-    #   libvirt-10.10.0-7.6.el9_6
-    #   virt-top-1.1.1-9.el9
-    #   virt-viewer-11.0-1.el9
-    #   bridge-utils-1.7.1-3.el9
-    #   libvirt-devel-10.10.0-7.6.el9_6.x86_64)
-
 %description
 %{summary}
 
@@ -57,8 +48,23 @@ case "$1" in
   ;;
 esac
 
-systemctl start libvirtd
 systemctl enable libvirtd
+systemctl start libvirtd
+
+# CReate pcap group
+if ! getent group pcap >/dev/null; then
+    groupadd -r pcap
+fi
+
+# Add cape user to pcap group
+if id cape >/dev/null 2>&1; then
+    usermod -a -G pcap cape
+fi
+
+if [ -x /usr/sbin/tcpdump ]; then
+    chgrp pcap /usr/sbin/tcpdump
+    setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump || true
+fi
 %postun
 # Deletes directory when uninstalling the package
 if [ "$1" = 0 ] && [ -d /var/chef/cookbooks/cape ]; then
