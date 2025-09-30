@@ -86,9 +86,9 @@ allow_static = no
 # This tries to avoid failing an analysis because the reports can't be written
 # due out-of-diskspace errors. Setting this value to 0 disables the check.
 # (Note: this feature is currently not supported under Windows.)
-freespace = <%= @cape_min_freespace %>
+freespace = 8000
 # Process tasks, but not reach out of memory
-freespace_processing = 15000
+freespace_processing = 8000
 
 # Temporary directory containing the files uploaded through Cuckoo interfaces
 # (web.py, api.py, Django web interface).
@@ -167,6 +167,7 @@ reverse_dns = off
 sort_pcap = on
 
 [database]
+enabled = off
 # Specify the database connection string.
 # Examples, see documentation for more:
 # sqlite:///foo.db
@@ -218,7 +219,7 @@ vm_state = 300
 enabled = off
 path = /mnt/tmpfs/
 # in mb
-freespace = 300000
+freespace = 8000
 
 [cleaner]
 # Invoke cleanup if <= of free space detected. see/set freespace/freespace_processing

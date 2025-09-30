@@ -17,7 +17,17 @@ action :add do
     cape_result_server_port = new_resource.cape_result_server_port
     cape_min_freespace = new_resource.cape_min_freespace
 
+    execute 'daemon-reload' do
+      command 'systemctl daemon-reload'
+      action :nothing
+    end
+
     dnf_package 'cape' do
+      action :upgrade
+    end
+
+    # If cape services are enabled, also download redborder-malware-pythonpyenv and airflow
+    dnf_package ['redborder-malware-pythonpyenv'] do
       action :upgrade
     end
 
@@ -53,11 +63,6 @@ action :add do
       notifies :run, 'execute[daemon-reload]', :delayed
     end
 
-    execute 'daemon-reload' do
-      command 'systemctl daemon-reload'
-      action :nothing
-    end
-
     %w(
     cape
     cape-rooter
@@ -71,17 +76,35 @@ action :add do
       end
     end
 
-    # Configure tcpdump
-    execute 'config_tcpdump' do
-      command 'setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump'
+    group 'pcap' do
+      action :create
     end
 
+    group 'pcap' do
+      append true
+      members [user]
+      action :modify
+    end
 
-    utilities = %w(libvirt-devel virtio-win)
-    utilities.each do |utility|
-      dnf_package utility do
-        action :upgrade
-      end
+    file '/usr/sbin/tcpdump' do
+      group 'pcap'
+      action :create
+    end
+
+    execute 'config_tcpdump' do
+      command 'setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump'
+      not_if "getcap /usr/sbin/tcpdump | grep cap_net_admin"
+    end
+
+    # This is done like this because cookbook rb-manager needs to enable crb repo first
+    dnf_package 'libvirt-devel' do
+      action :upgrade
+    end
+  
+    service 'libvirtd' do
+      service_name 'libvirtd'
+      supports status: true, restart: true, enable: true
+      action [:enable, :start]
     end
 
     cape_dirs = %w(logs tmp static)
@@ -156,6 +179,7 @@ action :add do
         :libvirtd_max_requests => node[:redborder][:cape][:libvirtd_max_requests], 
         :libvirtd_max_client_requests => node[:redborder][:cape][:libvirtd_max_client_requests]
       })
+      notifies :restart, 'service[libvirtd]', :delayed
     end
 
     template "/etc/libvirt/network.conf" do
@@ -175,10 +199,49 @@ end
 action :remove do
   begin
 
+    %w(
+    cape
+    cape-rooter
+    cape-processor
+    cape-web
+    ).each do |svc|
+      service svc do
+        service_name svc
+        action [:stop, :disable]
+        ignore_failure true
+      end
+    end
+
+    execute 'daemon-reload' do
+      command 'systemctl daemon-reload'
+      action :nothing
+    end
+
     dnf_package 'cape' do
       action :remove
     end
 
+    directory '/opt/CAPEv2' do
+      recursive true
+      action :delete
+    end
+
+    %w(
+    cape-rooter.service
+    cape-processor.service
+    cape.service
+    cape-web.service
+    ).each do |unit|
+      file "/etc/systemd/system/#{unit}" do
+        action :delete
+        notifies :run, 'execute[daemon-reload]', :delayed
+      end
+    end
+
+    directory '/usr/lib/cape' do
+      recursive true
+      action :delete
+    end
 
     Chef::Log.info('Cape cookbook has been processed')
   rescue => e

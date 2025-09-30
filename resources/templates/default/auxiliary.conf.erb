@@ -63,11 +63,11 @@ host = root@<%= @interface_ip %>
 
 # Specify the path to your local installation of tcpdump. Make sure this
 # path is correct.
-tcpdump = /usr/bin/tcpdump
+tcpdump = /usr/sbin/tcpdump
 
 # Specify the network interface name on which tcpdump should monitor the
 # traffic. Make sure the interface is active.
-interface = virbr1
+interface = virbr0
 
 # Specify a Berkeley packet filter to pass to tcpdump.
 bpf = not arp

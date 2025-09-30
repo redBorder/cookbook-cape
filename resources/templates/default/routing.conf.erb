@@ -81,7 +81,7 @@ verify_rt_table = yes
 enabled = no
 server = 192.168.1.2
 dnsport = 53
-interface = virbr1
+interface = virbr0
 # Redirect TCP ports (should we also support UDP?). If specified, this should
 # represent whitespace-separated src:dst pairs. E.g., "80:8080 443:8080" will
 # redirect all 80/443 traffic to 8080 on the specified InetSim host.
@@ -95,7 +95,7 @@ ports =
 enabled = no
 dnsport = 5353
 proxyport = 9040
-interface = virbr1
+interface = virbr0
 
 [vpn]
 # By default we disable VPN support as it requires running utils/rooter.py as

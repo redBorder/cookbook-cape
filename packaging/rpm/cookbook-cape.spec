@@ -12,7 +12,9 @@ Requires: libvirt = 10.10.0
 Requires: qemu-kvm = 17:9.1.0
 Requires: virt-top = 1.1.1
 Requires: virt-viewer = 11.0
+Requires: virtio-win
 Requires: bridge-utils = 1.7.1
+Requires: p7zip = 16.02
 Requires: gcc-c++
 Requires: make
 Requires: python3-devel
@@ -64,6 +66,11 @@ fi
 if [ -x /usr/sbin/tcpdump ]; then
     chgrp pcap /usr/sbin/tcpdump
     setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump || true
+fi
+
+if command -v firewall-cmd &> /dev/null; then
+  firewall-cmd --zone=libvirt --add-port=2042/tcp --permanent
+  firewall-cmd --reload
 fi
 %postun
 # Deletes directory when uninstalling the package
