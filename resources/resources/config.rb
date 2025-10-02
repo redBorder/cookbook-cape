@@ -1,3 +1,5 @@
+unified_mode true
+
 # Cookbook:: cape
 # Resource:: config
 
