@@ -265,9 +265,9 @@ action :register do
       service_key = service['Name']
 
       next if node['cape'][service_key]['registered']
-      
+
       json_query = Chef::JSONCompat.to_json(service)
-      
+
       execute "Register #{service['Name']} service in consul" do
         command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
         action :nothing
@@ -284,10 +284,10 @@ end
 action :deregister do
   begin
     service_names = %w(cape-rooter cape-processor cape cape-web)
-    
+
     service_names.each do |service_name|
       service_key = service_name
-      
+
       next unless node['airflow'][service_key]['registered']
 
       execute "Deregister #{service_name} service from consul" do
