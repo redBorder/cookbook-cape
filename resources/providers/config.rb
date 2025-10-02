@@ -31,7 +31,7 @@ action :add do
       action :upgrade
     end
 
-    group "libvirtd" do
+    group 'libvirtd' do
       members user
     end
 
@@ -50,15 +50,15 @@ action :add do
       end
     end
 
-    template "/etc/systemd/system/cape-web.service" do
+    template '/etc/systemd/system/cape-web.service' do
       cookbook 'cape'
-      source "cape-web.service.erb"
+      source 'cape-web.service.erb'
       mode '0644'
       owner 'root'
       group 'root'
       variables ({
-        cape_web_ip: cape_web_ip, 
-        cape_web_port: cape_web_port
+        cape_web_ip: cape_web_ip,
+        cape_web_port: cape_web_port,
       })
       notifies :run, 'execute[daemon-reload]', :delayed
     end
@@ -93,14 +93,14 @@ action :add do
 
     execute 'config_tcpdump' do
       command 'setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump'
-      not_if "getcap /usr/sbin/tcpdump | grep cap_net_admin"
+      not_if 'getcap /usr/sbin/tcpdump | grep cap_net_admin'
     end
 
     # This is done like this because cookbook rb-manager needs to enable crb repo first
     dnf_package 'libvirt-devel' do
       action :upgrade
     end
-  
+ 
     service 'libvirtd' do
       service_name 'libvirtd'
       supports status: true, restart: true, enable: true
@@ -137,14 +137,14 @@ action :add do
         owner 'root'
         group 'root'
         variables ({
-          :interface_ip => cape_interface_ip,
-          :interface => cape_interface,
-          :cape_web_ip => cape_web_ip,
-          :cape_web_port => cape_web_port,
-          :cape_result_server_ip => cape_result_server_ip,
-          :cape_result_server_port => cape_result_server_port,
-          :cape_min_freespace => cape_min_freespace,
-          :ipaddress_sync => ipaddress_sync
+          :interface_ie: cape_interface_ip,
+          :interface: cape_interface,
+          :cape_web_ie: cape_web_ip,
+          :cape_web_pore: cape_web_port,
+          :cape_result_server_ie: cape_result_server_ip,
+          :cape_result_server_pore: cape_result_server_port,
+          :cape_min_freespace: cape_min_freespace,
+          :ipaddress_syne: ipaddress_sync
         })
         notifies :restart, 'service[cape]', :delayed
         notifies :restart, 'service[cape-processor]', :delayed
@@ -166,23 +166,23 @@ action :add do
       notifies :restart, 'service[cape-web]', :delayed
     end
 
-    template "/etc/libvirt/libvirtd.conf" do
+    template '/etc/libvirt/libvirtd.conf' do
       cookbook 'cape'
       source 'libvirtd.conf.erb'
       mode '0644'
       owner 'root'
       group 'root'
-      variables ({ 
-        :libvirtd_max_clients => node[:redborder][:cape][:libvirtd_max_clients], 
-        :libvirtd_max_workers => node[:redborder][:cape][:libvirtd_max_workers], 
-        :libvirtd_min_workers => node[:redborder][:cape][:libvirtd_min_workers], 
-        :libvirtd_max_requests => node[:redborder][:cape][:libvirtd_max_requests], 
-        :libvirtd_max_client_requests => node[:redborder][:cape][:libvirtd_max_client_requests]
+      variables ({
+        :libvirtd_max_clients: node[:redborder][:cape][:libvirtd_max_clients],
+        :libvirtd_max_workers: node[:redborder][:cape][:libvirtd_max_workers],
+        :libvirtd_min_workers: node[:redborder][:cape][:libvirtd_min_workers],
+        :libvirtd_max_requests: node[:redborder][:cape][:libvirtd_max_requests],
+        :libvirtd_max_client_requests: node[:redborder][:cape][:libvirtd_max_client_requests],
       })
       notifies :restart, 'service[libvirtd]', :delayed
     end
 
-    template "/etc/libvirt/network.conf" do
+    template '/etc/libvirt/network.conf' do
       cookbook 'cape'
       source 'network.conf.erb'
       mode '0644'
@@ -255,18 +255,16 @@ action :register do
     # Define services to add
     services = service_names.map do |name|
       {
-        'ID' => "#{name}-#{node['hostname']}",
-        'Name' => name,
-        'Address' => node['ipaddress_sync']
+        'ID': "#{name}-#{node['hostname']}",
+        'Name': name,
+        'Address': node['ipaddress_sync']
       }
     end
 
     services.each do |service|
       service_key = service['Name']
-      
       unless node['cape'][service_key]['registered']
         json_query = Chef::JSONCompat.to_json(service)
-
         execute "Register #{service['Name']} service in consul" do
           command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
           action :nothing
@@ -284,10 +282,8 @@ end
 action :deregister do
   begin
     service_names = %w(cape-rooter cape-processor cape cape-web)
-    
     service_names.each do |service_name|
       service_key = service_name
-      
       if node['cape'][service_key]['registered']
         execute "Deregister #{service_name} service from consul" do
           command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
