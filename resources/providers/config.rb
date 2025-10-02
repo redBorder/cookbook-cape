@@ -58,7 +58,7 @@ action :add do
       group 'root'
       variables(
         cape_web_ip: cape_web_ip,
-        cape_web_port: cape_web_port,
+        cape_web_port: cape_web_port
       )
       notifies :run, 'execute[daemon-reload]', :delayed
     end
@@ -68,7 +68,7 @@ action :add do
     cape-rooter
     cape-processor
     cape-web
-    ).each do |svc| 
+    ).each do |svc|
       service svc do
         service_name svc
         supports status: true, restart: true, enable: true
@@ -100,7 +100,7 @@ action :add do
     dnf_package 'libvirt-devel' do
       action :upgrade
     end
- 
+
     service 'libvirtd' do
       service_name 'libvirtd'
       supports status: true, restart: true, enable: true
@@ -140,7 +140,7 @@ action :add do
           interface_ie: cape_interface_ip,
           interface: cape_interface,
           cape_web_ie: cape_web_ip,
-          cape_web_pore: cape_web_port,
+          cape_web_port: cape_web_port,
           cape_result_server_ie: cape_result_server_ip,
           cape_result_server_pore: cape_result_server_port,
           cape_min_freespace: cape_min_freespace,
@@ -173,11 +173,11 @@ action :add do
       owner 'root'
       group 'root'
       variables(
-        libvirtd_max_clients: node[:redborder][:cape][:libvirtd_max_clients],
-        libvirtd_max_workers: node[:redborder][:cape][:libvirtd_max_workers],
-        libvirtd_min_workers: node[:redborder][:cape][:libvirtd_min_workers],
-        libvirtd_max_requests: node[:redborder][:cape][:libvirtd_max_requests],
-        libvirtd_max_client_requests: node[:redborder][:cape][:libvirtd_max_client_requests],
+        libvirtd_max_clients: node['redborder']['cape']['libvirtd_max_clients'],
+        libvirtd_max_workers: node['redborder']['cape']['libvirtd_max_workers'],
+        libvirtd_min_workers: node['redborder']['cape']['libvirtd_min_workers'],
+        libvirtd_max_requests: node['redborder']['cape']['libvirtd_max_requests'],
+        libvirtd_max_client_requests: node['redborder']['cape']['libvirtd_max_client_requests'],
       )
       notifies :restart, 'service[libvirtd]', :delayed
     end
