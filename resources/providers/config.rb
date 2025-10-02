@@ -56,7 +56,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
-      variables (
+      variables(
         cape_web_ip: cape_web_ip,
         cape_web_port: cape_web_port,
       )
@@ -68,7 +68,7 @@ action :add do
     cape-rooter
     cape-processor
     cape-web
-    ).each do |svc|
+    ).each do |svc| 
       service svc do
         service_name svc
         supports status: true, restart: true, enable: true
@@ -136,7 +136,7 @@ action :add do
         mode '0644'
         owner 'root'
         group 'root'
-        variables (
+        variables(
           interface_ie: cape_interface_ip,
           interface: cape_interface,
           cape_web_ie: cape_web_ip,
@@ -172,7 +172,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
-      variables (
+      variables(
         libvirtd_max_clients: node[:redborder][:cape][:libvirtd_max_clients],
         libvirtd_max_workers: node[:redborder][:cape][:libvirtd_max_workers],
         libvirtd_min_workers: node[:redborder][:cape][:libvirtd_min_workers],
