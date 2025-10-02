@@ -177,7 +177,7 @@ action :add do
         libvirtd_max_workers: node['redborder']['cape']['libvirtd_max_workers'],
         libvirtd_min_workers: node['redborder']['cape']['libvirtd_min_workers'],
         libvirtd_max_requests: node['redborder']['cape']['libvirtd_max_requests'],
-        libvirtd_max_client_requests: node['redborder']['cape']['libvirtd_max_client_requests'],
+        libvirtd_max_client_requests: node['redborder']['cape']['libvirtd_max_client_requests']
       )
       notifies :restart, 'service[libvirtd]', :delayed
     end
@@ -257,22 +257,24 @@ action :register do
       {
         'ID': "#{name}-#{node['hostname']}",
         'Name': name,
-        'Address': node['ipaddress_sync']
+        'Address': node['ipaddress_sync'],
       }
     end
 
     services.each do |service|
       service_key = service['Name']
-      unless node['cape'][service_key]['registered']
-        json_query = Chef::JSONCompat.to_json(service)
-        execute "Register #{service['Name']} service in consul" do
-          command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
-          action :nothing
-        end.run_action(:run)
 
-        node.override['cape'][service_key]['registered'] = true
-        Chef::Log.info("#{service['Name']} service has been registered in consul")
-      end
+      next if node['cape'][service_key]['registered']
+      
+      json_query = Chef::JSONCompat.to_json(service)
+      
+      execute "Register #{service['Name']} service in consul" do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.override['cape'][service_key]['registered'] = true
+      Chef::Log.info("#{service['Name']} service has been registered in consul")
     end
   rescue => e
     Chef::Log.error("Error registering services: #{e.message}")
@@ -282,17 +284,19 @@ end
 action :deregister do
   begin
     service_names = %w(cape-rooter cape-processor cape cape-web)
+    
     service_names.each do |service_name|
       service_key = service_name
-      if node['cape'][service_key]['registered']
-        execute "Deregister #{service_name} service from consul" do
-          command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
-          action :nothing
-        end.run_action(:run)
+      
+      next unless node['airflow'][service_key]['registered']
 
-        node.override['cape'][service_key]['registered'] = false
-        Chef::Log.info("#{service_name} service has been deregistered from consul")
-      end
+      execute "Deregister #{service_name} service from consul" do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.override['cape'][service_key]['registered'] = false
+      Chef::Log.info("#{service_name} service has been deregistered from consul")
     end
   rescue => e
     Chef::Log.error("Error deregistering services: #{e.message}")
