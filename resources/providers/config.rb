@@ -26,7 +26,7 @@ action :add do
       action :upgrade
     end
 
-    # If cape services are enabled, also download redborder-malware-pythonpyenv and airflow
+    # If cape services are enabled, also download redborder-malware-pythonpyenv
     dnf_package ['redborder-malware-pythonpyenv'] do
       action :upgrade
     end
@@ -56,6 +56,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
+      sensitive true
       variables(
         cape_web_ip: cape_web_ip,
         cape_web_port: cape_web_port
@@ -136,6 +137,7 @@ action :add do
         mode '0644'
         owner 'root'
         group 'root'
+        sensitive true
         variables(
           interface_ie: cape_interface_ip,
           interface: cape_interface,
@@ -159,6 +161,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
+      sensitive true
       action :create_if_missing
       notifies :restart, 'service[cape]', :delayed
       notifies :restart, 'service[cape-processor]', :delayed
@@ -172,6 +175,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
+      sensitive true
       variables(
         libvirtd_max_clients: node['redborder']['cape']['libvirtd_max_clients'],
         libvirtd_max_workers: node['redborder']['cape']['libvirtd_max_workers'],
@@ -188,6 +192,7 @@ action :add do
       mode '0644'
       owner 'root'
       group 'root'
+      sensitive true
     end
 
     Chef::Log.info('Cape cookbook has been processed')
@@ -288,7 +293,7 @@ action :deregister do
     service_names.each do |service_name|
       service_key = service_name
 
-      next unless node['airflow'][service_key]['registered']
+      next unless node['cape'][service_key]['registered']
 
       execute "Deregister #{service_name} service from consul" do
         command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
