@@ -8,17 +8,6 @@ License: AGPL 3.0
 URL: https://github.com/redBorder/cookbook-cape
 Source0: %{name}-%{version}.tar.gz
 
-Requires: libvirt = 10.10.0
-Requires: qemu-kvm = 17:9.1.0
-Requires: virt-top = 1.1.1
-Requires: virt-viewer = 11.0
-Requires: virtio-win
-Requires: bridge-utils = 1.7.1
-Requires: p7zip = 16.02
-Requires: gcc-c++
-Requires: make
-Requires: python3-devel
-
 %description
 %{summary}
 
@@ -50,35 +39,12 @@ case "$1" in
   ;;
 esac
 
-systemctl enable libvirtd
-systemctl start libvirtd
-
-# CReate pcap group
-if ! getent group pcap >/dev/null; then
-    groupadd -r pcap
-fi
-
-# Add cape user to pcap group
-if id cape >/dev/null 2>&1; then
-    usermod -a -G pcap cape
-fi
-
-if [ -x /usr/sbin/tcpdump ]; then
-    chgrp pcap /usr/sbin/tcpdump
-    setcap cap_net_raw,cap_net_admin=eip /usr/sbin/tcpdump || true
-fi
-
-if command -v firewall-cmd &> /dev/null; then
-  firewall-cmd --zone=libvirt --add-port=2042/tcp --permanent
-  firewall-cmd --reload
-fi
 %postun
 # Deletes directory when uninstalling the package
 if [ "$1" = 0 ] && [ -d /var/chef/cookbooks/cape ]; then
   rm -rf /var/chef/cookbooks/cape
 fi
 
-systemctl daemon-reload
 %files
 %defattr(0644,root,root)
 %attr(0755,root,root)
@@ -89,5 +55,5 @@ systemctl daemon-reload
 %doc
 
 %changelog
-* Wed Aug 06 2025 Daniel Castro <dcastro@redborder.com>
+* Wed Aug 06 2025 Pablo Torres <ptorres@redborder.com>
 - Create cape cookbook
