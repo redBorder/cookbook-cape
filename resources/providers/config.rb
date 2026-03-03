@@ -26,6 +26,28 @@ action :add do
       action :upgrade
     end
 
+    # Packages with specific versions
+    {
+      'libvirt' => '10.10.0',
+      'qemu-kvm' => '17:9.1.0',
+      'virt-top' => '1.1.1',
+      'virt-viewer' => '11.0',
+      'bridge-utils' => '1.7.1',
+      'p7zip' => '16.02'
+    }.each do |pkg, ver|
+      dnf_package pkg do
+        version ver
+        action :upgrade
+      end
+    end
+
+    # Packages without version constraint
+    %w[virtio-win gcc-c++ make python3-devel].each do |pkg|
+      dnf_package pkg do
+        action :upgrade
+      end
+    end
+
     # If cape services are enabled, also download redborder-malware-pythonpyenv
     dnf_package ['redborder-malware-pythonpyenv'] do
       action :upgrade
@@ -99,6 +121,7 @@ action :add do
 
     # This is done like this because cookbook rb-manager needs to enable crb repo first
     dnf_package 'libvirt-devel' do
+      version '10.10.0'
       action :upgrade
     end
 
