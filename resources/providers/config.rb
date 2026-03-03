@@ -57,21 +57,6 @@ action :add do
       members user
     end
 
-    %w(
-    cape-rooter.service
-    cape-processor.service
-    cape.service
-    ).each do |unit|
-      cookbook_file "/etc/systemd/system/#{unit}" do
-        cookbook 'cape'
-        source unit
-        owner 'root'
-        group 'root'
-        mode '0644'
-        # notifies :restart, "service[#{unit}]", :delayed
-      end
-    end
-
     template '/etc/systemd/system/cape-web.service' do
       cookbook 'cape'
       source 'cape-web.service.erb'
@@ -252,18 +237,6 @@ action :remove do
     directory '/opt/CAPEv2' do
       recursive true
       action :delete
-    end
-
-    %w(
-    cape-rooter.service
-    cape-processor.service
-    cape.service
-    cape-web.service
-    ).each do |unit|
-      file "/etc/systemd/system/#{unit}" do
-        action :delete
-        notifies :run, 'execute[daemon-reload]', :delayed
-      end
     end
 
     directory '/usr/lib/cape' do
