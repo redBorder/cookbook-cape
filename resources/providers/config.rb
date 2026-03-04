@@ -17,11 +17,6 @@ action :add do
     cape_result_server_port = new_resource.cape_result_server_port
     cape_min_freespace = new_resource.cape_min_freespace
 
-    execute 'daemon-reload' do
-      command 'systemctl daemon-reload'
-      action :nothing
-    end
-
     dnf_package 'cape' do
       action :upgrade
     end
@@ -147,11 +142,11 @@ action :add do
         group 'root'
         sensitive true
         variables(
-          interface_ie: cape_interface_ip,
+          interface_ip: cape_interface_ip,
           interface: cape_interface,
-          cape_web_ie: cape_web_ip,
+          cape_web_ip: cape_web_ip,
           cape_web_port: cape_web_port,
-          cape_result_server_ie: cape_result_server_ip,
+          cape_result_server_ip: cape_result_server_ip,
           cape_result_server_pore: cape_result_server_port,
           cape_min_freespace: cape_min_freespace,
           ipaddress_syne: ipaddress_sync
