@@ -28,7 +28,7 @@ action :add do
       'virt-top' => '1.1.1',
       'virt-viewer' => '11.0',
       'bridge-utils' => '1.7.1',
-      'p7zip' => '16.02'
+      'p7zip' => '16.02',
     }.each do |pkg, ver|
       dnf_package pkg do
         version ver
@@ -37,7 +37,7 @@ action :add do
     end
 
     # Packages without version constraint
-    %w[virtio-win gcc-c++ make python3-devel].each do |pkg|
+    %w(virtio-win gcc-c++ make python3-devel).each do |pkg|
       dnf_package pkg do
         action :upgrade
       end
@@ -276,7 +276,6 @@ action :register do
       node.normal['cape'][service_name]['registered'] = true
       Chef::Log.info("#{service_name} service has been registered in consul")
     end
-
   rescue => e
     Chef::Log.error("Error registering services: #{e.message}")
   end
@@ -299,7 +298,6 @@ action :deregister do
       node.normal['cape'][service_name]['registered'] = false
       Chef::Log.info("#{service_name} service has been deregistered from consul")
     end
-
   rescue => e
     Chef::Log.error("Error deregistering services: #{e.message}")
   end
