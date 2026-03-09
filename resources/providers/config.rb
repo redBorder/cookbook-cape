@@ -258,24 +258,24 @@ action :register do
     service_names = %w(cape-rooter cape-processor cape cape-web)
 
     service_names.each do |service_name|
-      unless node['cape'][service_name]['registered']
-        query = {}
-        query['ID'] = "#{service_name}-#{node['hostname']}"
-        query['Name'] = service_name
-        query['Address'] = ipaddress_sync
-        
-        query['Port'] = cape_web_port if service_name == 'cape-web'
-        
-        json_query = Chef::JSONCompat.to_json(query)
+      next if node['cape'][service_name]['registered']
 
-        execute "Register #{service_name} in consul" do
-          command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
-          action :nothing
-        end.run_action(:run)
+      query = {}
+      query['ID'] = "#{service_name}-#{node['hostname']}"
+      query['Name'] = service_name
+      query['Address'] = ipaddress_sync
 
-        node.normal['cape'][service_name]['registered'] = true
-        Chef::Log.info("#{service_name} service has been registered in consul")
-      end
+      query['Port'] = cape_web_port if service_name == 'cape-web'
+
+      json_query = Chef::JSONCompat.to_json(query)
+
+      execute "Register #{service_name} in consul" do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/register -d '#{json_query}' &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.normal['cape'][service_name]['registered'] = true
+      Chef::Log.info("#{service_name} service has been registered in consul")
     end
   rescue => e
     Chef::Log.error("Error registering CAPE services: #{e.message}")
@@ -287,15 +287,15 @@ action :deregister do
     service_names = %w(cape-rooter cape-processor cape cape-web)
 
     service_names.each do |service_name|
-      if node['cape'][service_name]['registered']
-        execute "Deregister #{service_name} from consul" do
-          command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
-          action :nothing
-        end.run_action(:run)
+      next unless node['cape'][service_name]['registered']
 
-        node.normal['cape'][service_name]['registered'] = false
-        Chef::Log.info("#{service_name} service has been deregistered from consul")
-      end
+      execute "Deregister #{service_name} from consul" do
+        command "curl -X PUT http://localhost:8500/v1/agent/service/deregister/#{service_name}-#{node['hostname']} &>/dev/null"
+        action :nothing
+      end.run_action(:run)
+
+      node.normal['cape'][service_name]['registered'] = false
+      Chef::Log.info("#{service_name} service has been deregistered from consul")
     end
   rescue => e
     Chef::Log.error("Error deregistering CAPE services: #{e.message}")
