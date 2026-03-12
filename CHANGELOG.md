@@ -1,6 +1,11 @@
 cookbook-cape CHANGELOG
 ===============
 
+## 0.1.0
+
+  - Pablo Torres
+    - [ef8667d] Feature #22343: Migrate and adapt code from cuckoo cookbook in legacy
+
 ## 0.0.1
 
   - Pablo Torres
