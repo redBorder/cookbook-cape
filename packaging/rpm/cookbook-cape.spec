@@ -55,5 +55,5 @@ fi
 %doc
 
 %changelog
-* Wed Aug 06 2025 Daniel Castro <dcastro@redborder.com>
+* Wed Aug 06 2025 Pablo Torres <ptorres@redborder.com>
 - Create cape cookbook
