@@ -1,6 +1,11 @@
 cookbook-cape CHANGELOG
 ===============
 
+## 0.1.1
+
+  - manegron
+    - [81199cc] Upload cookbook only if opscode-erchef is active
+
 ## 0.1.0
 
   - Pablo Torres
